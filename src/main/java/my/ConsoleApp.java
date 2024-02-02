@@ -1,3 +1,5 @@
+package my;
+
 /**
  * @author Valentin Naumov
  */

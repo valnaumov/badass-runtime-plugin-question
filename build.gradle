@@ -17,5 +17,27 @@ java {
 }
 
 application {
-    mainClass = 'ConsoleApp'
+    mainClass = 'my.ConsoleApp'
 }
+
+runtime {
+    launcher {
+        windowsScriptTemplate = file('jpackage\\windowsScriptTemplate.txt')
+    }
+    jpackage {
+        imageOptions  << '--win-console'
+        installerOptions << '--verbose'
+    }
+}
+
+// Starting with Gradle 8.4, the clean task failed with an IOException when deleting a read-only file (Gradle 8.3 and earlier handled it OK).
+// The EXE file is the only read-only file that is built, so the workaround is to remove its read-only attribute if the file exists.
+tasks.register('changeJpackageExeAttributes', Exec) {
+    def imageName = runtime.jpackageData.get().getImageNameOrDefault()
+
+    def exeFile = file("build/jpackage/${imageName}/${imageName}.exe")
+    onlyIf { exeFile.exists() }
+    commandLine 'cmd', '/c', "attrib -r \"$exeFile\""
+}
+clean.dependsOn(changeJpackageExeAttributes)
+jpackageImage.dependsOn(changeJpackageExeAttributes)
